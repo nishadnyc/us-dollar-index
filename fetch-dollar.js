@@ -3,7 +3,7 @@ import fs from "fs";
 const API_KEY = process.env.FRED_API_KEY;
 
 async function fetchDollar() {
-  const url = `https://api.stlouisfed.org/fred/series/data?series_id=DTWEXBGS&api_key=${API_KEY}&file_type=json`;
+  const url = `https://api.stlouisfed.org/fred/series?series_id=DTWEXBGS&api_key=${API_KEY}&file_type=json`;
 
   const res = await fetch(url);
   const data = await res.json();
