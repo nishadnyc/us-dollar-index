@@ -17,5 +17,11 @@ jobs:
       - run: node fetch-dollar.js
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-      - run: git config user.name "bot" && git add prices.json && git commit -m "Update prices" || true
+
+      - name: Configure Git Credentials
+        run: |
+          git config --local user.name "${{ github.actor }}"
+          git config --local user.email "${{ github.actor_id }}+${{ github.actor }}@://github.com"
+        shell: bash
+      - run: git add prices.json && git commit -m "Update prices" || true
       - run: git push
