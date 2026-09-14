@@ -3,7 +3,6 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "0 9 * * *" # 9 AM UTC daily
-    - cron: "0 21 * * *" # 9 AM UTC daily
 
 permissions:
   contents: write
