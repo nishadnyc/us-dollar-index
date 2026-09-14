@@ -1,215 +1,318 @@
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: var(--font-sans); background: var(--surface-0); color: var(--text-primary); }
-  
-  .container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; }
-  
-  .header {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .header h1 {
-    font-size: 28px;
-    font-weight: 500;
-    margin-bottom: 0.5rem;
-  }
-  
-  .header p {
-    font-size: 14px;
-    color: var(--text-secondary);
-  }
-  
-  .metrics {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-  
-  .metric-card {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    text-align: center;
-  }
-  
-  .metric-card .label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 0.5rem;
-  }
-  
-  .metric-card .value {
-    font-size: 24px;
-    font-weight: 500;
-  }
-  
-  .metric-card .change {
-    font-size: 13px;
-    margin-top: 0.5rem;
-  }
-  
-  .change.positive { color: var(--text-success); }
-  .change.negative { color: var(--text-danger); }
-  
-  .chart-container {
-    background: var(--surface-1);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  canvas {
-    max-height: 400px;
-  }
-  
-  .no-data {
-    text-align: center;
-    padding: 2rem;
-    color: var(--text-secondary);
-  }
-  
-  @media (max-width: 640px) {
-    .container { padding: 1rem; }
-    .header h1 { font-size: 22px; }
-    .metrics { grid-template-columns: repeat(2, 1fr); }
-    .metric-card { padding: 1rem; }
-    .metric-card .value { font-size: 20px; }
-    .chart-container { padding: 1rem; }
-  }
-</style>
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>US Dollar Index</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
-<div class="container">
-  <div class="header">
-    <h1>US Dollar Index</h1>
-    <p>Daily price tracking and analysis</p>
-  </div>
-  
-  <div class="metrics">
-    <div class="metric-card">
-      <div class="label">Current</div>
-      <div class="value" id="current">—</div>
-      <div class="change" id="change-day">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">30-day change</div>
-      <div class="value" id="change-30d">—</div>
-      <div class="change" id="percent-30d">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">High</div>
-      <div class="value" id="high">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="label">Low</div>
-      <div class="value" id="low">—</div>
-    </div>
-  </div>
-  
-  <div class="chart-container">
-    <canvas id="priceChart"></canvas>
-  </div>
-  
-  <div class="no-data" id="loading">
-    Loading price data...
-  </div>
-</div>
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background: #f5f5f5;
+        color: #333;
+      }
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-<script>
-let chart = null;
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+      }
 
-async function loadData() {
-  try {
-    const res = await fetch('prices.json');
-    if (!res.ok) throw new Error('No data yet');
-    
-    const data = await res.json();
-    if (!data || data.length === 0) throw new Error('Empty data');
-    
-    document.getElementById('loading').style.display = 'none';
-    updateMetrics(data);
-    renderChart(data);
-  } catch (err) {
-    document.getElementById('loading').innerHTML = '📭 No price data yet. Check back soon!';
-  }
-}
+      .header {
+        margin-bottom: 2rem;
+        text-align: center;
+      }
 
-function updateMetrics(data) {
-  const latest = data[data.length - 1];
-  const prev = data[data.length - 2] || data[0];
-  const thirtyDaysAgo = data[Math.max(0, data.length - 30)] || data[0];
-  
-  const price = latest.dollar;
-  const dayChange = price - prev.dollar;
-  const thirtyDayChange = price - thirtyDaysAgo.dollar;
-  
-  const prices = data.map(d => d.dollar);
-  const high = Math.max(...prices);
-  const low = Math.min(...prices);
-  
-  document.getElementById('current').textContent = price.toFixed(2);
-  
-  const dayChangeEl = document.getElementById('change-day');
-  dayChangeEl.textContent = (dayChange >= 0 ? '+' : '') + dayChange.toFixed(2);
-  dayChangeEl.className = 'change ' + (dayChange >= 0 ? 'positive' : 'negative');
-  
-  document.getElementById('change-30d').textContent = (thirtyDayChange >= 0 ? '+' : '') + thirtyDayChange.toFixed(2);
-  const percent30d = ((thirtyDayChange / thirtyDaysAgo.dollar) * 100).toFixed(1);
-  document.getElementById('percent-30d').textContent = (thirtyDayChange >= 0 ? '+' : '') + percent30d + '%';
-  document.getElementById('percent-30d').className = 'change ' + (thirtyDayChange >= 0 ? 'positive' : 'negative');
-  
-  document.getElementById('high').textContent = high.toFixed(2);
-  document.getElementById('low').textContent = low.toFixed(2);
-}
+      .header h1 {
+        font-size: 32px;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #1a1a1a;
+      }
 
-function renderChart(data) {
-  const ctx = document.getElementById('priceChart').getContext('2d');
-  
-  if (chart) chart.destroy();
-  
-  chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: data.map(d => d.date),
-      datasets: [{
-        label: 'USD Index',
-        data: data.map(d => d.dollar),
-        borderColor: 'var(--text-primary)',
-        backgroundColor: 'var(--bg-accent)',
-        borderWidth: 2,
-        fill: true,
-        tension: 0.4,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointBackgroundColor: 'var(--text-primary)'
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { display: false }
-      },
-      scales: {
-        y: {
-          beginAtZero: false,
-          ticks: { color: 'var(--text-secondary)' },
-          grid: { color: 'var(--border)' }
-        },
-        x: {
-          ticks: { color: 'var(--text-secondary)' },
-          grid: { display: false }
+      .header p {
+        font-size: 16px;
+        color: #666;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .metric-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .metric-card .label {
+        font-size: 12px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+      }
+
+      .metric-card .value {
+        font-size: 28px;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      .metric-card .change {
+        font-size: 14px;
+        margin-top: 0.5rem;
+        font-weight: 500;
+      }
+
+      .change.positive {
+        color: #27ae60;
+      }
+
+      .change.negative {
+        color: #e74c3c;
+      }
+
+      .chart-container {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 2rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+      }
+
+      canvas {
+        max-height: 400px;
+      }
+
+      .no-data {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #666;
+        font-size: 16px;
+      }
+
+      footer {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: #888;
+        font-size: 13px;
+        border-top: 1px solid #ddd;
+        margin-top: 2rem;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 1rem;
+        }
+
+        .header h1 {
+          font-size: 24px;
+        }
+
+        .metrics {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        .metric-card {
+          padding: 1rem;
+        }
+
+        .metric-card .value {
+          font-size: 22px;
+        }
+
+        .chart-container {
+          padding: 1rem;
         }
       }
-    }
-  });
-}
 
-loadData();
-</script>
+      @media (max-width: 480px) {
+        .metrics {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>US Dollar Index</h1>
+        <p>Daily price tracking</p>
+      </div>
+
+      <div class="metrics">
+        <div class="metric-card">
+          <div class="label">Current</div>
+          <div class="value" id="current">—</div>
+          <div class="change" id="change-day">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">30-day change</div>
+          <div class="value" id="change-30d">—</div>
+          <div class="change" id="percent-30d">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">High</div>
+          <div class="value" id="high">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="label">Low</div>
+          <div class="value" id="low">—</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="priceChart"></canvas>
+      </div>
+
+      <div class="no-data" id="loading">Loading price data...</div>
+    </div>
+
+    <footer>
+      Data from Federal Reserve Economic Data (FRED) — Series DTWEXBGS
+    </footer>
+
+    <script>
+      let chart = null;
+
+      async function loadData() {
+        try {
+          const res = await fetch("prices.json");
+          if (!res.ok) throw new Error("No data yet");
+
+          const data = await res.json();
+          if (!data || data.length === 0) throw new Error("Empty data");
+
+          document.getElementById("loading").style.display = "none";
+          updateMetrics(data);
+          renderChart(data);
+        } catch (err) {
+          document.getElementById("loading").innerHTML =
+            "📭 No price data yet. Check back soon!";
+        }
+      }
+
+      function updateMetrics(data) {
+        const latest = data[data.length - 1];
+        const prev = data[data.length - 2] || data[0];
+        const thirtyDaysAgo = data[Math.max(0, data.length - 30)] || data[0];
+
+        const price = latest.dollar;
+        const dayChange = price - prev.dollar;
+        const thirtyDayChange = price - thirtyDaysAgo.dollar;
+
+        const prices = data.map((d) => d.dollar);
+        const high = Math.max(...prices);
+        const low = Math.min(...prices);
+
+        document.getElementById("current").textContent = price.toFixed(2);
+
+        const dayChangeEl = document.getElementById("change-day");
+        dayChangeEl.textContent =
+          (dayChange >= 0 ? "+" : "") + dayChange.toFixed(2);
+        dayChangeEl.className =
+          "change " + (dayChange >= 0 ? "positive" : "negative");
+
+        document.getElementById("change-30d").textContent =
+          (thirtyDayChange >= 0 ? "+" : "") + thirtyDayChange.toFixed(2);
+        const percent30d = (
+          (thirtyDayChange / thirtyDaysAgo.dollar) *
+          100
+        ).toFixed(1);
+        document.getElementById("percent-30d").textContent =
+          (thirtyDayChange >= 0 ? "+" : "") + percent30d + "%";
+        document.getElementById("percent-30d").className =
+          "change " + (thirtyDayChange >= 0 ? "positive" : "negative");
+
+        document.getElementById("high").textContent = high.toFixed(2);
+        document.getElementById("low").textContent = low.toFixed(2);
+      }
+
+      function renderChart(data) {
+        const ctx = document.getElementById("priceChart").getContext("2d");
+
+        if (chart) chart.destroy();
+
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: data.map((d) => d.date),
+            datasets: [
+              {
+                label: "USD Index",
+                data: data.map((d) => d.dollar),
+                borderColor: "#2c3e50",
+                backgroundColor: "rgba(52, 152, 219, 0.05)",
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 0,
+                pointHoverRadius: 8,
+                pointBackgroundColor: "#2c3e50",
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            interaction: {
+              mode: "index",
+              intersect: false,
+            },
+            plugins: {
+              legend: {
+                display: true,
+                labels: {
+                  usePointStyle: true,
+                  padding: 15,
+                  font: { size: 13 },
+                },
+              },
+            },
+            scales: {
+              y: {
+                beginAtZero: false,
+                ticks: {
+                  color: "#888",
+                  font: { size: 12 },
+                },
+                grid: {
+                  color: "#f0f0f0",
+                },
+              },
+              x: {
+                ticks: {
+                  color: "#888",
+                  font: { size: 11 },
+                  maxTicksLimit: 10,
+                },
+                grid: {
+                  display: false,
+                },
+              },
+            },
+          },
+        });
+      }
+
+      loadData();
+    </script>
+  </body>
+</html>
