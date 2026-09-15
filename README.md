@@ -1,48 +1,56 @@
-# US Dollar Index
+# U.S. Dollar Index Tracker
 
-A lightweight dashboard that tracks the daily Nominal Broad U.S. Dollar Index using data from the Federal Reserve Economic Data (FRED) API.
+An automated, serverless data pipeline that continuously collects and stores the Nominal Broad U.S. Dollar Index.
 
-The project fetches the latest available observation automatically, stores the historical values in `prices.json`, and displays the data in a responsive Chart.js dashboard.
+The project uses GitHub Actions to fetch the latest data from the FRED API on a schedule, save new observations to `prices.json`, and maintain a historical record automatically—without requiring a dedicated server or manual updates.
 
-## Live Demo
+A lightweight web dashboard is included for exploring the collected data.
 
-[View the dashboard](https://nishad.top/us-dollar-index/)
+## How It Works
+
+1. GitHub Actions runs the scheduled update workflow.
+2. `fetch-dollar.js` requests the latest observation from the FRED API.
+3. Invalid or unavailable observations are ignored.
+4. New observations are added to `prices.json`.
+5. GitHub commits the updated data back to the repository.
+6. `index.html` loads the stored data and displays it using Chart.js.
+
+Once configured, the project runs on its own with no human intervention.
 
 ## Features
 
-- Fetches the latest daily dollar index value
-- Stores historical observations in `prices.json`
-- Automatically avoids duplicate dates
-- Displays the current index value
-- Shows the daily change
-- Calculates the 30-day change and percentage change
-- Displays the historical high and low
-- Renders an interactive line chart
-- Can be updated automatically with GitHub Actions
-- Requires no frontend build step
+- Automated data collection through GitHub Actions
+- Serverless execution with no dedicated backend
+- Historical data stored directly in the repository
+- Automatic duplicate-date protection
+- Current index value and daily change
+- 30-day change and percentage change
+- Historical high and low values
+- Interactive Chart.js visualization
+- No frontend build step required
 
-## Data
+## Data Source
 
-This project uses the FRED series:
+This project uses the following FRED series:
 
-- **Series:** DTWEXBGS
+- **Series:** `DTWEXBGS`
 - **Name:** Nominal Broad U.S. Dollar Index
 - **Frequency:** Daily
 - **Units:** Index, January 2006 = 100
 - **Source:** Board of Governors of the Federal Reserve System
 
-The index is a broad, trade-weighted measure of the U.S. dollar against currencies from major U.S. trading partners.
+The index is a broad, trade-weighted measure of the U.S. dollar against the currencies of major U.S. trading partners.
 
-> Note: This project tracks the broad U.S. Dollar Index from FRED. It does not track the ICE U.S. Dollar Index futures contract, commonly known as DXY.
+> This project tracks the Nominal Broad U.S. Dollar Index from FRED. It does not track the ICE U.S. Dollar Index futures contract, commonly known as DXY.
 
-## How It Works
+## Project Goals
 
-1. `fetch-dollar.js` requests the latest observations from the FRED API.
-2. Invalid observations with a value of `.` are ignored.
-3. The most recent valid observation is selected.
-4. The observation is appended to `prices.json` if the date is not already present.
-5. `index.html` loads `prices.json` in the browser.
-6. Chart.js renders the historical data and calculates the summary metrics.
+The primary goal of this project is to build a self-running data collection system using GitHub as both:
+
+- The execution environment through GitHub Actions
+- The versioned storage layer for historical data
+
+The dashboard is a presentation layer on top of that automated pipeline.
 
 ## Project Structure
 
@@ -50,10 +58,10 @@ The index is a broad, trade-weighted measure of the U.S. dollar against currenci
 .
 ├── .github/
 │   └── workflows/
-│       └── ...
-├── fetch-dollar.js   # Fetches and stores the latest index value
-├── index.html        # Dashboard and chart
-├── package.json      # Node.js project metadata
-├── prices.json       # Historical index observations
+│       └── update-dollar.yml   # Scheduled automation
+├── fetch-dollar.js             # Fetches and stores new data
+├── index.html                  # Dashboard interface
+├── package.json                # Node.js project metadata
+├── prices.json                 # Historical observations
 └── README.md
 ```
