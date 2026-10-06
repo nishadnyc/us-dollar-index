@@ -22,11 +22,14 @@ Once configured, the project runs on its own with no human intervention.
 - Automated data collection through GitHub Actions
 - Serverless execution with no dedicated backend
 - Historical data stored directly in the repository
+- One record per calendar day (rate carried forward when FRED has no new observation)
 - Automatic duplicate-date protection
-- Current index value and daily change
+- Dark glassmorphism dashboard with animated count-up hero
+- Current index value with daily change pill
 - 30-day change and percentage change
-- Historical high and low values
-- Interactive Chart.js visualization
+- All-time high/low with dates, days-tracked counter
+- Interactive Chart.js visualization with 1M / 3M / 6M / 1Y / All range selector
+- Recent records table with per-day trend tags
 - No frontend build step required
 
 ## Data Source
