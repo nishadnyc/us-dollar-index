@@ -1,0 +1,27 @@
+name: Fetch DXY Intraday
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "5 */2 * * 1-5" # every 2 hours on weekdays (UTC)
+    - cron: "5 12 * * 0,6" # once daily on weekends, 12:05 UTC
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node fetch-dollar.js
+
+      - name: Configure Git Credentials
+        run: |
+          git config --local user.name "${{ github.actor }}"
+          git config --local user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
+        shell: bash
+      - run: git add prices.json && git commit -m "Update DXY prices" || true
+      - run: git push

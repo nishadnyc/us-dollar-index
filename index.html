@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>US Dollar Index — Daily Tracker</title>
+    <title>DXY — US Dollar Index · Intraday Tracker</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💵</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,7 +33,6 @@
         overflow-x: hidden;
       }
 
-      /* Ambient background glows */
       .bg-glow { position: fixed; inset: 0; z-index: -1; overflow: hidden; }
       .bg-glow::before, .bg-glow::after {
         content: ""; position: absolute; border-radius: 50%;
@@ -58,7 +57,6 @@
 
       .container { max-width: 1180px; margin: 0 auto; padding: 2.5rem 1.5rem 3rem; }
 
-      /* ---------- Header ---------- */
       .topbar {
         display: flex; justify-content: space-between; align-items: center;
         margin-bottom: 2.5rem;
@@ -82,7 +80,6 @@
       .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
       @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.5);} 50% { box-shadow: 0 0 0 6px rgba(52,211,153,0);} }
 
-      /* ---------- Hero ---------- */
       .hero {
         background: linear-gradient(135deg, rgba(56,189,248,0.12), rgba(129,140,248,0.08));
         border: 1px solid var(--card-border);
@@ -101,6 +98,7 @@
       .hero-row { display: flex; align-items: flex-end; gap: 1.5rem; flex-wrap: wrap; }
       .hero-value {
         font-size: clamp(56px, 8vw, 88px); font-weight: 800; letter-spacing: -3px; line-height: 1;
+        font-variant-numeric: tabular-nums;
         background: linear-gradient(120deg, #fff 30%, var(--accent1) 70%, var(--accent2));
         -webkit-background-clip: text; background-clip: text; color: transparent;
       }
@@ -114,7 +112,6 @@
       .hero-date { margin-top: 0.8rem; font-size: 13.5px; color: var(--muted); }
       .hero-date strong { color: var(--text); font-weight: 600; }
 
-      /* ---------- Stat cards ---------- */
       .stats {
         display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
         margin-bottom: 1.5rem;
@@ -131,11 +128,10 @@
       .stat:hover { transform: translateY(-4px); border-color: rgba(56,189,248,0.35); box-shadow: 0 12px 32px rgba(0,0,0,0.35); }
       .stat .icon { font-size: 20px; margin-bottom: 0.7rem; }
       .stat .label { font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; color: var(--muted); margin-bottom: 0.45rem; }
-      .stat .value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+      .stat .value { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; font-variant-numeric: tabular-nums; }
       .stat .sub { font-size: 13px; margin-top: 0.35rem; font-weight: 600; }
       .sub.up { color: var(--green); } .sub.down { color: var(--red); } .sub.muted { color: var(--muted); font-weight: 500; }
 
-      /* ---------- Chart ---------- */
       .chart-card {
         background: var(--card); border: 1px solid var(--card-border);
         border-radius: 24px; padding: 1.8rem;
@@ -159,7 +155,6 @@
       }
       .chart-wrap { position: relative; height: 380px; }
 
-      /* ---------- History table ---------- */
       .history {
         background: var(--card); border: 1px solid var(--card-border);
         border-radius: 24px; padding: 1.8rem; backdrop-filter: blur(12px);
@@ -176,7 +171,7 @@
       tbody tr { transition: background 0.15s ease; }
       tbody tr:hover { background: rgba(255,255,255,0.03); }
       tbody tr:last-child td { border-bottom: none; }
-      td.date { color: var(--muted); font-weight: 500; white-space: nowrap; }
+      td.time { color: var(--muted); font-weight: 500; white-space: nowrap; }
       td.price { font-weight: 700; font-variant-numeric: tabular-nums; }
       td.delta { font-weight: 600; font-variant-numeric: tabular-nums; }
       .tag {
@@ -228,48 +223,48 @@
           <div class="brand-icon">💵</div>
           <div>
             <h1>US Dollar Index</h1>
-            <p>Nominal Broad Index · FRED DTWEXBGS</p>
+            <p>ICE DXY · Yahoo Finance DX-Y.NYB</p>
           </div>
         </div>
-        <div class="live-badge"><span class="live-dot"></span>DAILY TRACKING</div>
+        <div class="live-badge"><span class="live-dot"></span>INTRADAY</div>
       </div>
 
       <div id="app" style="display:none">
         <section class="hero">
-          <div class="hero-label">Current Index Value</div>
+          <div class="hero-label">Current DXY Value</div>
           <div class="hero-row">
             <div class="hero-value" id="hero-value">—</div>
             <div class="hero-side">
               <span class="day-pill up" id="day-pill">—</span>
-              <div class="hero-date">as of <strong id="hero-date">—</strong> · updated daily</div>
+              <div class="hero-date">as of <strong id="hero-date">—</strong> · updates every 2h on weekdays</div>
             </div>
           </div>
         </section>
 
         <section class="stats">
           <div class="stat">
-            <div class="icon">📊</div>
-            <div class="label">30-Day Change</div>
-            <div class="value" id="stat-30d">—</div>
-            <div class="sub muted" id="stat-30d-pct">—</div>
-          </div>
-          <div class="stat">
-            <div class="icon">🏔️</div>
-            <div class="label">All-Time High</div>
+            <div class="icon">📈</div>
+            <div class="label">Day High</div>
             <div class="value" id="stat-high">—</div>
-            <div class="sub muted" id="stat-high-date">—</div>
+            <div class="sub muted" id="stat-high-time">—</div>
           </div>
           <div class="stat">
-            <div class="icon">🕳️</div>
-            <div class="label">All-Time Low</div>
+            <div class="icon">📉</div>
+            <div class="label">Day Low</div>
             <div class="value" id="stat-low">—</div>
-            <div class="sub muted" id="stat-low-date">—</div>
+            <div class="sub muted" id="stat-low-time">—</div>
           </div>
           <div class="stat">
-            <div class="icon">🗓️</div>
-            <div class="label">Days Tracked</div>
-            <div class="value" id="stat-days">—</div>
-            <div class="sub muted" id="stat-since">—</div>
+            <div class="icon">🔔</div>
+            <div class="label">Prev Close</div>
+            <div class="value" id="stat-prev">—</div>
+            <div class="sub muted" id="stat-prev-date">—</div>
+          </div>
+          <div class="stat">
+            <div class="icon">🕐</div>
+            <div class="label">Bars Today</div>
+            <div class="value" id="stat-bars">—</div>
+            <div class="sub muted" id="stat-span">—</div>
           </div>
         </section>
 
@@ -277,11 +272,10 @@
           <div class="chart-head">
             <h2>Price History <span id="chart-range-label"></span></h2>
             <div class="ranges" id="ranges">
-              <button data-range="30">1M</button>
-              <button data-range="90">3M</button>
-              <button data-range="180">6M</button>
-              <button data-range="365">1Y</button>
-              <button data-range="0" class="active">All</button>
+              <button data-range="day" class="active">Day</button>
+              <button data-range="5d">5D</button>
+              <button data-range="1m">1M</button>
+              <button data-range="all">All</button>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
@@ -291,7 +285,7 @@
           <h2>Recent Records</h2>
           <div style="overflow-x:auto">
             <table>
-              <thead><tr><th>Date</th><th>Index Value</th><th>Day Δ</th><th>Trend</th></tr></thead>
+              <thead><tr><th>Time (ET)</th><th>Index Value</th><th>Δ</th><th>Trend</th></tr></thead>
               <tbody id="history-body"></tbody>
             </table>
           </div>
@@ -302,29 +296,31 @@
     </div>
 
     <footer>
-      Data from <a href="https://fred.stlouisfed.org/series/DTWEXBGS" target="_blank" rel="noopener">Federal Reserve Economic Data (FRED)</a>
-      — Nominal Broad U.S. Dollar Index, Jan 2006 = 100
+      Data from <a href="https://finance.yahoo.com/quote/DX-Y.NYB" target="_blank" rel="noopener">Yahoo Finance</a>
+      — ICE US Dollar Index (DX-Y.NYB) · free, no API key
     </footer>
 
     <script>
       let chart = null;
       let fullData = [];
-      let activeRange = 0;
+      let activeRange = "day";
 
-      const fmtDate = (iso) =>
-        new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
-          month: "short", day: "numeric", year: "numeric",
-        });
-      const fmtAxis = (iso) =>
-        new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
-          month: "short", day: "numeric",
-        });
+      const TZ = "America/New_York";
+      const ms = (t) => Date.parse(t);
+      const fYMD = new Intl.DateTimeFormat("en-CA", { timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit" });
+      const fHM = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric", minute: "2-digit" });
+      const fHour = new Intl.DateTimeFormat("en-US", { timeZone: TZ, hour: "numeric" });
+      const fMD = new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "short", day: "numeric" });
+      const fFull = new Intl.DateTimeFormat("en-US", { timeZone: TZ, month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+
+      const signed = (n, d) => (n >= 0 ? "+" : "") + n.toFixed(d);
+      const dayOf = (t) => fYMD.format(ms(t));
 
       async function loadData() {
         try {
           const res = await fetch("prices.json");
           if (!res.ok) throw new Error("No data");
-          fullData = await res.json();
+          fullData = (await res.json()).slice().sort((a, b) => ms(a.time) - ms(b.time));
           if (!fullData.length) throw new Error("Empty");
           document.getElementById("loading").style.display = "none";
           document.getElementById("app").style.display = "block";
@@ -335,79 +331,99 @@
           bindRanges();
         } catch (err) {
           document.getElementById("loading").innerHTML =
-            "📭 No price data yet. Check back soon!";
+            "📭 No price data yet — the next scheduled fetch will populate it.";
         }
       }
 
-      function signed(n, digits) {
-        return (n >= 0 ? "+" : "") + n.toFixed(digits);
-      }
-
-      // Animated count-up for the hero number
       function countUp(el, target, duration = 900) {
         const start = performance.now();
-        const from = 0;
         function frame(now) {
           const p = Math.min((now - start) / duration, 1);
           const eased = 1 - Math.pow(1 - p, 3);
-          el.textContent = (from + (target - from) * eased).toFixed(2);
+          el.textContent = (target * eased).toFixed(2);
           if (p < 1) requestAnimationFrame(frame);
         }
         requestAnimationFrame(frame);
       }
 
+      function todayBars(data) {
+        const today = fYMD.format(Date.now());
+        return data.filter((r) => dayOf(r.time) === today);
+      }
+
+      function prevClose(data) {
+        const today = fYMD.format(Date.now());
+        for (let i = data.length - 1; i >= 0; i--) {
+          if (dayOf(data[i].time) !== today) return data[i];
+        }
+        return null;
+      }
+
       function updateHero(data) {
         const latest = data[data.length - 1];
-        const prev = data[data.length - 2] || latest;
-        const dayChange = latest.dollar - prev.dollar;
+        const prev = prevClose(data);
+        const ref = prev || data[0];
+        const chg = latest.dollar - ref.dollar;
+        const pct = (chg / ref.dollar) * 100;
 
         countUp(document.getElementById("hero-value"), latest.dollar);
-        document.getElementById("hero-date").textContent = fmtDate(latest.date);
+        document.getElementById("hero-date").textContent = fFull.format(ms(latest.time)) + " ET";
 
         const pill = document.getElementById("day-pill");
-        const arrow = dayChange > 0 ? "▲" : dayChange < 0 ? "▼" : "●";
-        pill.textContent = `${arrow} ${signed(dayChange, 2)} today`;
-        pill.className = "day-pill " + (dayChange >= 0 ? "up" : "down");
+        const arrow = chg > 0 ? "▲" : chg < 0 ? "▼" : "●";
+        pill.textContent = `${arrow} ${signed(chg, 2)} (${signed(pct, 2)}%) ${prev ? "today" : "session"}`;
+        pill.className = "day-pill " + (chg >= 0 ? "up" : "down");
       }
 
       function updateStats(data) {
-        const latest = data[data.length - 1];
-        const ref30 = data[Math.max(0, data.length - 30)];
-        const chg30 = latest.dollar - ref30.dollar;
-        const pct30 = (chg30 / ref30.dollar) * 100;
+        const bars = todayBars(data);
+        const session = bars.length ? bars : [data[data.length - 1]];
 
-        const el30 = document.getElementById("stat-30d");
-        el30.textContent = signed(chg30, 2);
-        el30.style.color = chg30 >= 0 ? "var(--green)" : "var(--red)";
-        const pctEl = document.getElementById("stat-30d-pct");
-        pctEl.textContent = signed(pct30, 1) + "%";
-        pctEl.className = "sub " + (chg30 >= 0 ? "up" : "down");
-
-        let high = data[0], low = data[0];
-        for (const d of data) {
-          if (d.dollar > high.dollar) high = d;
-          if (d.dollar < low.dollar) low = d;
+        let high = session[0], low = session[0];
+        for (const r of session) {
+          if (r.dollar > high.dollar) high = r;
+          if (r.dollar < low.dollar) low = r;
         }
         document.getElementById("stat-high").textContent = high.dollar.toFixed(2);
-        document.getElementById("stat-high-date").textContent = fmtDate(high.date);
+        document.getElementById("stat-high-time").textContent = fHM.format(ms(high.time)) + " ET";
         document.getElementById("stat-low").textContent = low.dollar.toFixed(2);
-        document.getElementById("stat-low-date").textContent = fmtDate(low.date);
+        document.getElementById("stat-low-time").textContent = fHM.format(ms(low.time)) + " ET";
 
-        document.getElementById("stat-days").textContent = data.length;
-        document.getElementById("stat-since").textContent = "since " + fmtDate(data[0].date);
+        const prev = prevClose(data);
+        document.getElementById("stat-prev").textContent = prev ? prev.dollar.toFixed(2) : "—";
+        document.getElementById("stat-prev-date").textContent = prev ? fMD.format(ms(prev.time)) : "first session";
+
+        document.getElementById("stat-bars").textContent = bars.length;
+        if (bars.length > 1) {
+          document.getElementById("stat-span").textContent =
+            fHM.format(ms(bars[0].time)) + " – " + fHM.format(ms(bars[bars.length - 1].time)) + " ET";
+        } else {
+          document.getElementById("stat-span").textContent = "today (ET)";
+        }
       }
 
-      function filteredData() {
-        if (!activeRange) return fullData;
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - activeRange);
-        const iso = cutoff.toISOString().slice(0, 10);
-        const f = fullData.filter((d) => d.date >= iso);
-        return f.length ? f : fullData;
+      function dailyCloses(rows) {
+        const m = new Map();
+        for (const r of rows) m.set(dayOf(r.time), r);
+        return [...m.values()];
+      }
+
+      function seriesFor() {
+        if (activeRange === "day") return { rows: todayBars(fullData), intraday: true, label: "· today" };
+        if (activeRange === "5d") {
+          const cutoff = Date.now() - 5 * 864e5;
+          return { rows: fullData.filter((r) => ms(r.time) >= cutoff), intraday: true, label: "· last 5 days" };
+        }
+        if (activeRange === "1m") {
+          const cutoff = Date.now() - 30 * 864e5;
+          return { rows: dailyCloses(fullData.filter((r) => ms(r.time) >= cutoff)), intraday: false, label: "· last 30 days" };
+        }
+        return { rows: dailyCloses(fullData), intraday: false, label: "· all time" };
       }
 
       function renderChart() {
-        const data = filteredData();
+        const { rows, intraday, label } = seriesFor();
+        const data = rows.length ? rows : fullData.slice(-1);
         const ctx = document.getElementById("priceChart").getContext("2d");
         if (chart) chart.destroy();
 
@@ -416,16 +432,22 @@
         gradient.addColorStop(0.6, "rgba(129,140,248,0.08)");
         gradient.addColorStop(1, "rgba(129,140,248,0)");
 
-        const first = data[0].dollar, last = data[data.length - 1].dollar;
-        const up = last >= first;
+        const up = data[data.length - 1].dollar >= data[0].dollar;
         const lineColor = up ? "#38bdf8" : "#f87171";
+
+        const labels = data.map((r) => {
+          const t = ms(r.time);
+          if (activeRange === "day") return fHM.format(t);
+          if (activeRange === "5d") return fMD.format(t) + ", " + fHour.format(t);
+          return fMD.format(t);
+        });
 
         chart = new Chart(ctx, {
           type: "line",
           data: {
-            labels: data.map((d) => fmtAxis(d.date)),
+            labels,
             datasets: [{
-              data: data.map((d) => d.dollar),
+              data: data.map((r) => r.dollar),
               borderColor: lineColor,
               backgroundColor: gradient,
               borderWidth: 2.5,
@@ -454,8 +476,11 @@
                 cornerRadius: 12,
                 displayColors: false,
                 callbacks: {
-                  title: (items) => fmtDate(data[items[0].dataIndex].date),
-                  label: (item) => "  Index: " + item.parsed.y.toFixed(2),
+                  title: (items) => {
+                    const r = data[items[0].dataIndex];
+                    return intraday ? fFull.format(ms(r.time)) + " ET" : fMD.format(ms(r.time));
+                  },
+                  label: (item) => "  DXY: " + item.parsed.y.toFixed(2),
                 },
               },
             },
@@ -473,25 +498,25 @@
           },
         });
 
-        const label = { 30: "· last 30 days", 90: "· last 3 months", 180: "· last 6 months", 365: "· last 12 months", 0: "· all time" }[activeRange];
         document.getElementById("chart-range-label").textContent = label;
       }
 
       function renderHistory(data) {
         const body = document.getElementById("history-body");
         const rows = [];
-        for (let i = data.length - 1; i >= Math.max(0, data.length - 10); i--) {
-          const d = data[i];
+        for (let i = data.length - 1; i >= Math.max(0, data.length - 12); i--) {
+          const r = data[i];
           const prev = data[i - 1];
-          const delta = prev ? d.dollar - prev.dollar : 0;
-          const trend = !prev || delta === 0 ? ["flat", "—", "flat"]
-            : delta > 0 ? ["up", "▲ Up", "up"] : ["down", "▼ Down", "down"];
+          const delta = prev ? r.dollar - prev.dollar : 0;
+          const cls = !prev || delta === 0 ? "flat" : delta > 0 ? "up" : "down";
+          const tag = !prev || delta === 0 ? "—" : delta > 0 ? "▲ Up" : "▼ Down";
+          const color = cls === "up" ? "var(--green)" : cls === "down" ? "var(--red)" : "var(--muted)";
           rows.push(
             `<tr>
-              <td class="date">${fmtDate(d.date)}</td>
-              <td class="price">${d.dollar.toFixed(2)}</td>
-              <td class="delta" style="color:${trend[0] === "up" ? "var(--green)" : trend[0] === "down" ? "var(--red)" : "var(--muted)"}">${prev ? signed(delta, 2) : "—"}</td>
-              <td><span class="tag ${trend[2]}">${trend[1]}</span></td>
+              <td class="time">${fFull.format(ms(r.time))} ET</td>
+              <td class="price">${r.dollar.toFixed(2)}</td>
+              <td class="delta" style="color:${color}">${prev ? signed(delta, 2) : "—"}</td>
+              <td><span class="tag ${cls}">${tag}</span></td>
             </tr>`
           );
         }
@@ -504,7 +529,7 @@
           if (!btn) return;
           document.querySelectorAll("#ranges button").forEach((b) => b.classList.remove("active"));
           btn.classList.add("active");
-          activeRange = parseInt(btn.dataset.range, 10);
+          activeRange = btn.dataset.range;
           renderChart();
         });
       }

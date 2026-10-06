@@ -1,59 +1,41 @@
-# U.S. Dollar Index Tracker
+# DXY Intraday Tracker
 
-An automated, serverless data pipeline that continuously collects and stores the Nominal Broad U.S. Dollar Index.
+An automated, serverless data pipeline that collects the ICE U.S. Dollar Index (DXY) throughout the trading day and stores it as versioned history — no dedicated server, no paid API.
 
-The project uses GitHub Actions to fetch the latest data from the FRED API on a schedule, save new observations to `prices.json`, and maintain a historical record automatically—without requiring a dedicated server or manual updates.
-
-A lightweight web dashboard is included for exploring the collected data.
+The project uses GitHub Actions to fetch 15-minute bars from Yahoo Finance on a schedule, append new observations to `prices.json`, and commit the updated data back to the repository. A dark, glassmorphism dashboard visualizes the intraday action.
 
 ## How It Works
 
-1. GitHub Actions runs the scheduled update workflow.
-2. `fetch-dollar.js` requests the latest observation from the FRED API.
-3. Invalid or unavailable observations are ignored.
-4. New observations are added to `prices.json`.
-5. GitHub commits the updated data back to the repository.
-6. `index.html` loads the stored data and displays it using Chart.js.
+1. GitHub Actions runs on schedule: every 2 hours on weekdays, once daily on weekends (all UTC cron).
+2. `fetch-dollar.js` requests the last 5 days of 15-minute DXY bars (`DX-Y.NYB`) from Yahoo Finance — free, no API key.
+3. Every bar newer than the last saved record is appended (automatic backfill, so delayed or skipped runs never leave gaps).
+4. On weekends (markets closed) a single daily snapshot carries the last close forward, keeping one record per calendar day.
+5. Duplicate timestamps are skipped; `prices.json` stays chronologically sorted.
+6. GitHub commits the updated data back to the repository.
+7. `index.html` loads the stored data and renders the dashboard with Chart.js.
 
 Once configured, the project runs on its own with no human intervention.
 
 ## Features
 
-- Automated data collection through GitHub Actions
-- Serverless execution with no dedicated backend
-- Historical data stored directly in the repository
-- One record per calendar day (rate carried forward when FRED has no new observation)
-- Automatic duplicate-date protection
+- Automated intraday collection through GitHub Actions (2-hour weekday cadence, daily weekend snapshot)
+- 100% free data — Yahoo Finance, no API key or signup
+- Automatic backfill + duplicate protection
 - Dark glassmorphism dashboard with animated count-up hero
-- Current index value with daily change pill
-- 30-day change and percentage change
-- All-time high/low with dates, days-tracked counter
-- Interactive Chart.js visualization with 1M / 3M / 6M / 1Y / All range selector
-- Recent records table with per-day trend tags
+- Current DXY with day change vs previous close
+- Day high/low with timestamps, previous close, bars-today counter
+- Interactive Chart.js visualization with Day / 5D / 1M / All ranges (intraday bars up close, daily closes zoomed out)
+- Recent records table with per-bar trend tags
 - No frontend build step required
 
 ## Data Source
 
-This project uses the following FRED series:
+- **Symbol:** `DX-Y.NYB` — ICE US Dollar Index
+- **Source:** Yahoo Finance chart API (`query1.finance.yahoo.com`)
+- **Granularity:** 15-minute bars, backfilled on every run
+- **Cost:** free, no authentication
 
-- **Series:** `DTWEXBGS`
-- **Name:** Nominal Broad U.S. Dollar Index
-- **Frequency:** Daily
-- **Units:** Index, January 2006 = 100
-- **Source:** Board of Governors of the Federal Reserve System
-
-The index is a broad, trade-weighted measure of the U.S. dollar against the currencies of major U.S. trading partners.
-
-> This project tracks the Nominal Broad U.S. Dollar Index from FRED. It does not track the ICE U.S. Dollar Index futures contract, commonly known as DXY.
-
-## Project Goals
-
-The primary goal of this project is to build a self-running data collection system using GitHub as both:
-
-- The execution environment through GitHub Actions
-- The versioned storage layer for historical data
-
-The dashboard is a presentation layer on top of that automated pipeline.
+> This project tracks the ICE U.S. Dollar Index (DXY), a measure of the dollar against a basket of six major currencies. It previously tracked the Fed's Nominal Broad index (DTWEXBGS); that history was cleared when the project moved to intraday DXY.
 
 ## Project Structure
 
@@ -61,10 +43,18 @@ The dashboard is a presentation layer on top of that automated pipeline.
 .
 ├── .github/
 │   └── workflows/
-│       └── update-dollar.yml   # Scheduled automation
-├── fetch-dollar.js             # Fetches and stores new data
+│       └── intraday-fetch.yml  # Scheduled automation
+├── fetch-dollar.js             # Fetches and stores new bars
 ├── index.html                  # Dashboard interface
 ├── package.json                # Node.js project metadata
-├── prices.json                 # Historical observations
+├── prices.json                 # Historical records [{ time, dollar }]
 └── README.md
 ```
+
+Records in `prices.json` look like:
+
+```json
+{ "time": "2026-10-06T14:30:00-04:00", "dollar": 101.809 }
+```
+
+Times are ISO 8601 in America/New_York.

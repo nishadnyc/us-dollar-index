@@ -1,47 +1,137 @@
 import fs from "fs";
 
-const API_KEY = process.env.FRED_API_KEY;
+// ICE US Dollar Index (DXY) via Yahoo Finance — free, no API key.
+// Schedule: every 2h on weekdays, once daily on weekends (see workflow).
+// Each run backfills any 15m bars newer than the last saved record,
+// so delayed or skipped runs never leave gaps.
 
-// "Today" in the user's timezone (America/New_York), formatted YYYY-MM-DD
-const today = new Date().toLocaleDateString("en-CA", {
-  timeZone: "America/New_York",
-});
+const SYMBOL = "DX-Y.NYB";
+// query2 first: query1 429s Node's TLS fingerprint, query2 does not.
+// Both hosts serve the same chart API.
+const HOSTS = ["query2.finance.yahoo.com", "query1.finance.yahoo.com"];
+const UA =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
+const FILE = "prices.json";
 
-async function fetchDollar() {
-  const url = `https://api.stlouisfed.org/fred/series/observations?series_id=DTWEXBGS&api_key=${API_KEY}&file_type=json`;
-
-  const res = await fetch(url);
-  const data = await res.json();
-
-  if (!data.observations) {
-    console.error("API error:", data);
-    process.exit(1);
-  }
-
-  // Get last observation with valid data (not ".")
-  const validObs = data.observations.filter((o) => o.value !== ".");
-  const latest = validObs[validObs.length - 1];
-
-  let prices = [];
-  try {
-    prices = JSON.parse(fs.readFileSync("prices.json", "utf-8"));
-  } catch {
-    // File doesn't exist yet
-  }
-
-  // Skip if today's date is already saved
-  const last = prices[prices.length - 1];
-  if (last && last.date === today) {
-    console.log(`Already saved for ${today} — skipping`);
-    return;
-  }
-
-  // Save one record per calendar day, carrying the latest known rate forward
-  prices.push({ date: today, dollar: parseFloat(latest.value) });
-  fs.writeFileSync("prices.json", JSON.stringify(prices, null, 2));
-  console.log(
-    `Saved: ${today} = ${latest.value} (FRED observation date: ${latest.date})`
+// Format an epoch-ms instant as ISO 8601 in America/New_York,
+// e.g. "2026-10-06T14:30:00-04:00"
+function etISO(epochMs, gmtoffset) {
+  const wall = new Date(epochMs + gmtoffset * 1000);
+  const p = (n) => String(n).padStart(2, "0");
+  const sign = gmtoffset < 0 ? "-" : "+";
+  const a = Math.abs(gmtoffset);
+  const off = `${sign}${p(Math.floor(a / 3600))}:${p(Math.floor((a % 3600) / 60))}`;
+  return (
+    `${wall.getUTCFullYear()}-${p(wall.getUTCMonth() + 1)}-${p(wall.getUTCDate())}` +
+    `T${p(wall.getUTCHours())}:${p(wall.getUTCMinutes())}:${p(wall.getUTCSeconds())}${off}`
   );
 }
 
-fetchDollar().catch(console.error);
+const etYMD = (epochMs, gmtoffset) => etISO(epochMs, gmtoffset).slice(0, 10);
+
+// Day of week (0=Sun..6=Sat) for an ET calendar date
+function etDow(epochMs, gmtoffset) {
+  return new Date(etYMD(epochMs, gmtoffset) + "T12:00:00Z").getUTCDay();
+}
+
+const sleep = (s) => new Promise((r) => setTimeout(r, s * 1000));
+
+async function fetchChart() {
+  const path = `/v8/finance/chart/${SYMBOL}?interval=15m&range=5d`;
+  let lastErr = "";
+  for (const host of HOSTS) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const res = await fetch(`https://${host}${path}`, {
+        headers: { "User-Agent": UA },
+      });
+      if (res.ok) return res.json();
+      lastErr = `https://${host} -> HTTP ${res.status}`;
+      console.error(`Yahoo API: ${lastErr} (attempt ${attempt}/3)`);
+      if (res.status === 429 || res.status >= 500) await sleep(10 * attempt);
+      else break; // don't retry 4xx other than 429
+    }
+  }
+  console.error(`Yahoo API error: ${lastErr}`);
+  process.exit(1);
+}
+
+async function main() {
+  const data = await fetchChart();
+  const result = data && data.chart && data.chart.result && data.chart.result[0];
+  if (!result || !result.timestamp) {
+    console.error("Yahoo API error:", JSON.stringify(data).slice(0, 300));
+    process.exit(1);
+  }
+
+  const gmtoffset = result.meta.gmtoffset; // e.g. -14400 (EDT)
+  const closes = (result.indicators && result.indicators.quote[0].close) || [];
+  const stamps = result.timestamp || [];
+
+  // Drop the still-forming live bar (its timestamp isn't on a 15m boundary);
+  // the next run picks it up once finalized.
+  const lastIdx = stamps.length - 1;
+  const closedStamps =
+    lastIdx >= 0 && stamps[lastIdx] % 900 !== 0
+      ? stamps.slice(0, lastIdx)
+      : stamps;
+
+  let prices = [];
+  try {
+    prices = JSON.parse(fs.readFileSync(FILE, "utf-8"));
+    if (!Array.isArray(prices)) prices = [];
+  } catch {
+    // fresh start
+  }
+
+  const seen = new Set(prices.map((p) => p.time));
+  const lastMs = prices.length
+    ? Math.max(...prices.map((p) => Date.parse(p.time)))
+    : 0;
+
+  const fresh = [];
+
+  // Backfill: append every 15m bar newer than the last saved record
+  for (let i = 0; i < closedStamps.length; i++) {
+    const c = closes[i];
+    if (c == null || !isFinite(c)) continue;
+    const ms = closedStamps[i] * 1000;
+    if (ms <= lastMs) continue;
+    const time = etISO(ms, gmtoffset);
+    if (seen.has(time)) continue;
+    seen.add(time);
+    fresh.push({ time, dollar: Math.round(c * 1000) / 1000 });
+  }
+
+  // Weekend daily snapshot: markets are closed, so record one row per
+  // weekend day carrying the last close forward (keeps daily continuity)
+  const nowMs = Date.now();
+  const todayYMD = etYMD(nowMs, gmtoffset);
+  const dow = etDow(nowMs, gmtoffset);
+  const all = prices.concat(fresh);
+  const hasToday = all.some((p) => p.time.slice(0, 10) === todayYMD);
+  if ((dow === 0 || dow === 6) && !hasToday && all.length) {
+    const latest = all[all.length - 1];
+    const noonMs = Date.parse(`${todayYMD}T12:00:00Z`) - gmtoffset * 1000;
+    const snap = { time: etISO(noonMs, gmtoffset), dollar: latest.dollar };
+    if (!seen.has(snap.time)) {
+      fresh.push(snap);
+      console.log(`Weekend snapshot: ${snap.time} = ${snap.dollar}`);
+    }
+  }
+
+  if (!fresh.length) {
+    console.log("Already up to date — nothing new");
+    return;
+  }
+
+  const merged = all.concat(fresh).sort((a, b) => Date.parse(a.time) - Date.parse(b.time));
+  fs.writeFileSync(FILE, JSON.stringify(merged, null, 2));
+  console.log(
+    `Added ${fresh.length} record(s): ${fresh[0].time} -> ${fresh[fresh.length - 1].time}`
+  );
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
