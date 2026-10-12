@@ -1,9 +1,8 @@
-name: Fetch DXY Intraday
+name: Fetch Daily Dollar Price
 on:
   workflow_dispatch:
   schedule:
-    - cron: "5 */6 * * 1-5" # every 6 hours on weekdays (UTC)
-    - cron: "5 12 * * 0,6" # once daily on weekends, 12:05 UTC
+    - cron: "0 9 * * *" # 9 AM UTC daily
 
 permissions:
   contents: write
@@ -17,11 +16,13 @@ jobs:
         with:
           node-version: 20
       - run: node fetch-dollar.js
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
 
       - name: Configure Git Credentials
         run: |
           git config --local user.name "${{ github.actor }}"
           git config --local user.email "${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com"
         shell: bash
-      - run: git add prices.json && git commit -m "Update DXY prices" || true
+      - run: git add prices.json && git commit -m "Update prices" || true
       - run: git push
