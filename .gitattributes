@@ -1,0 +1,4 @@
+# Keep GitHub language stats clean: index.html is a static dashboard asset,
+# prices.json is workflow-generated data - neither reflects the repo language.
+*.html linguist-vendored
+prices.json linguist-generated
